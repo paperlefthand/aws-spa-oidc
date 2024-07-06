@@ -66,7 +66,7 @@ class Sample extends Component {
   };
 
   execApi = async () => {
-    const path = '/sample'
+    const path = '/spa-oidc-sample'
     const resBody = await API.get('API_ENDPOINT', path);
     console.log('resBody:', resBody);
   };
@@ -88,7 +88,7 @@ const AuthedContents = ({email, signOut, execApi}) => {
   return (
     <div className="sessionInfo">
       <h3>-- Authenticated! --</h3>
-      <p>email: {email}</p>
+      <p>your email: {email}</p>
       <p className="actionButton"><button onClick={signOut}>サインアウト</button></p>
       <p className="actionButton"><button onClick={execApi}>サンプルAPI Call</button></p>
     </div>
