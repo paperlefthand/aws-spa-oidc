@@ -42,7 +42,8 @@ class Sample extends Component {
     super(props);
     this.state = {
       authState: null,
-      email: null
+      email: null,
+      jwtToken: null
     };
   }
 
@@ -50,29 +51,35 @@ class Sample extends Component {
     const awsCred = await Auth.currentCredentials();
     if (!awsCred.authenticated) {
       console.log('未認証');
-      this.setState({ authState: 'signOut', email: null });
+      this.setState({ authState: 'signOut', email: null, jwtToken: null });
       return;
     }
     console.log('認証済');
     const session = await Auth.currentSession();
     const decodedIdToken = jwtDecode(session.idToken.jwtToken);
-    this.setState({ authState: 'signedIn', email: decodedIdToken.email });
+    this.setState({ authState: 'signedIn', email: decodedIdToken.email, jwtToken: session.idToken.jwtToken });
   }
 
   signOut = async () => {
     await Auth.signOut();
     console.log('signOut');
-    this.setState({ authState: 'signOut', email: null });
+    this.setState({ authState: 'signOut', email: null, jwtToken: null });
   };
 
   execApi = async () => {
     const path = '/spa-oidc-sample'
-    const resBody = await API.get('API_ENDPOINT', path);
+    const resBody = await API.get('API_ENDPOINT', path,
+      {
+        headers: {
+          Authorization: this.state.jwtToken
+        },
+      }
+    );
     console.log('resBody:', resBody);
   };
 
   render() {
-    const { authState, email } = this.state;
+    const { authState, email, jwtToken } = this.state;
     return (
       <div>
         <div className="signin">
@@ -84,7 +91,7 @@ class Sample extends Component {
   }
 }
 
-const AuthedContents = ({email, signOut, execApi}) => {
+const AuthedContents = ({ email, signOut, execApi }) => {
   return (
     <div className="sessionInfo">
       <h3>-- Authenticated! --</h3>
