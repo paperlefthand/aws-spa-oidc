@@ -47,12 +47,4 @@ variable "oidc_client_secret" {
   nullable = false
 }
 
-variable "signin_url" {
-  type     = string
-  nullable = false
-}
 
-variable "signout_url" {
-  type     = string
-  nullable = false
-}

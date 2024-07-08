@@ -1,5 +1,5 @@
 import './App.css';
-import { Component } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Amplify, Auth, API } from 'aws-amplify';
 import { jwtDecode } from 'jwt-decode';
 
@@ -37,59 +37,62 @@ Amplify.configure({
   }
 });
 
-class App extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      authState: null,
-      email: null,
-      jwtToken: null
-    };
-  }
+const App = () => {
 
-  componentDidMount = async () => {
-    const awsCred = await Auth.currentCredentials();
-    if (!awsCred.authenticated) {
-      console.log('未認証');
-      this.setState({ authState: 'signOut', email: null, jwtToken: null });
-      return;
-    }
-    console.log('認証済');
-    const session = await Auth.currentSession();
-    const decodedIdToken = jwtDecode(session.idToken.jwtToken);
-    this.setState({ authState: 'signedIn', email: decodedIdToken.email, jwtToken: session.idToken.jwtToken });
-  }
+  const [authState, setAuthState] = useState('signOut')
+  const [email, setEmail] = useState(null)
+  const [jwtToken, setJwtToken] = useState(null)
+  const [personalData, setPersonalData] = useState(null)
 
-  signOut = async () => {
+  useEffect(() => {
+    (async () => {
+      const awsCred = await Auth.currentCredentials();
+      if (!awsCred.authenticated) {
+        console.log('未認証');
+        setAuthState('signOut');
+        setEmail(null);
+        setJwtToken(null);
+        return;
+      }
+      console.log('認証済');
+      const session = await Auth.currentSession();
+      const decodedIdToken = jwtDecode(session.idToken.jwtToken);
+      setAuthState('signedIn');
+      setEmail(decodedIdToken.email);
+      setJwtToken(session.idToken.jwtToken);
+    })()
+  }, [setAuthState, setEmail, setJwtToken]);
+
+  const signOut = async () => {
     await Auth.signOut();
     console.log('signOut');
-    this.setState({ authState: 'signOut', email: null, jwtToken: null });
+    setAuthState('signOut');
+    setEmail(null);
+    setJwtToken(null);
   };
 
-  execApi = async () => {
+  const execApi = async () => {
     const path = process.env.REACT_APP_HttpApiPath
     const resBody = await API.get('API_ENDPOINT', path,
       {
         headers: {
-          Authorization: this.state.jwtToken
+          Authorization: jwtToken
         },
       }
     );
     console.log('resBody:', resBody);
+    setPersonalData(resBody["message"])
   };
 
-  render() {
-    const authState = this.state.authState;
-    const email = this.state.email;
-    return (
-      <div>
-        <div className="signin">
-          {authState === 'signOut' && <a className="App-link" href={HOSTED_UI_URL}>Sign-In with UserPool Hosted-UI</a>}
-          {authState === 'signedIn' && <AuthedContents email={email} signOut={this.signOut} execApi={this.execApi} />}
-        </div>
+  return (
+    <div>
+      <div className="signin">
+        {authState === 'signOut' && <a className="App-link" href={HOSTED_UI_URL}>Sign-In with UserPool Hosted-UI</a>}
+        {authState === 'signedIn' && <AuthedContents email={email} signOut={signOut} execApi={execApi} />}
       </div>
-    );
-  }
+      <p>{personalData}</p>
+    </div>
+  );
 }
 
 const AuthedContents = ({ email, signOut, execApi }) => {

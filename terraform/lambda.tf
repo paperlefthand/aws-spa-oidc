@@ -31,7 +31,7 @@ resource "aws_lambda_function" "main" {
   source_code_hash = filebase64sha256(data.archive_file.lambda_function.output_path)
   role             = aws_iam_role.main.arn
   handler          = "lambda_function.lambda_handler"
-  runtime          = "python3.11"
+  runtime          = "python3.12"
   timeout          = 3
   layers           = [var.powertools_layer_arn]
   environment {
