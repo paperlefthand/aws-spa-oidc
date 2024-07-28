@@ -63,6 +63,12 @@ const App = () => {
     })()
   }, [setAuthState, setEmail, setJwtToken]);
 
+  const signIn = async () => {
+    await Auth.federatedSignIn();
+    console.log('signIn');
+    setAuthState('signedIn');
+  };
+
   const signOut = async () => {
     await Auth.signOut();
     console.log('signOut');
@@ -87,7 +93,8 @@ const App = () => {
   return (
     <div>
       <div className="signin">
-        {authState === 'signOut' && <a className="App-link" href={HOSTED_UI_URL}>Sign-In with UserPool Hosted-UI</a>}
+        {/* {authState === 'signOut' && <a className="App-link" href={HOSTED_UI_URL}>Sign-In with UserPool Hosted-UI</a>} */}
+        {authState === 'signOut' && <button onClick={signIn}>login</button>}
         {authState === 'signedIn' && <AuthedContents email={email} signOut={signOut} execApi={execApi} />}
       </div>
       <p>{personalData}</p>
