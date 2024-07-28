@@ -69,11 +69,12 @@ resource "aws_cognito_user_pool_domain" "main" {
 
 resource "aws_cognito_user_pool_client" "client" {
   access_token_validity                = 60
-  allowed_oauth_flows                  = ["code", "implicit"]
+  allowed_oauth_flows                  = ["code"]
   allowed_oauth_flows_user_pool_client = true
   allowed_oauth_scopes                 = ["phone", "email", "openid", "profile"]
   auth_session_validity                = 3
-  callback_urls                        = ["http://localhost:3000", "https://d2b3qncv3yrc37.cloudfront.net"]
+  callback_urls                       = ["http://localhost:3000"]
+  # callback_urls                       = ["http://localhost:3000", "https://d2b3qncv3yrc37.cloudfront.net"]
   default_redirect_uri                          = null
   enable_propagate_additional_user_context_data = false
   enable_token_revocation                       = true
@@ -105,7 +106,7 @@ resource "aws_cognito_identity_provider" "idp" {
     attributes_request_method     = "GET"
     attributes_url                = "${var.oidc_url}/userinfo"
     attributes_url_add_attributes = "false"
-    authorize_scopes              = "email openid name nickname"
+    authorize_scopes              = "email openid profile"
     authorize_url                 = "${var.oidc_url}/authorize"
     client_id                     = var.oidc_client_id
     client_secret                 = var.oidc_client_secret

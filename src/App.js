@@ -7,6 +7,7 @@ const REGION = process.env.REACT_APP_Region;
 const USERPOOL_CLIENT_ID = process.env.REACT_APP_UserPoolClientId;
 const USERPOOL_DOMAIN = process.env.REACT_APP_UserPoolDomain;
 const SINGIN_URL = process.env.REACT_APP_SignInUrl;
+const SINGOUT_URL = process.env.REACT_APP_SignOutUrl;
 const OIDC_SCOPE = process.env.REACT_APP_OIDC_Scope;
 
 const ENDPOINT_DOMAIN = `${USERPOOL_DOMAIN}.auth.${REGION}.amazoncognito.com`;
@@ -17,12 +18,12 @@ Amplify.configure({
     region: REGION,
     userPoolId: process.env.REACT_APP_UserPoolId,
     userPoolWebClientId: USERPOOL_CLIENT_ID,
-    identityPoolId: process.env.REACT_APP_IdentityPoolId,
+    // identityPoolId: process.env.REACT_APP_IdentityPoolId,
     oauth: {
       domain: ENDPOINT_DOMAIN,
       scope: OIDC_SCOPE.split('+'),
       redirectSignIn: SINGIN_URL,
-      redirectSignOut: SINGIN_URL,
+      redirectSignOut: SINGOUT_URL,
       responseType: 'code'
     }
   },
@@ -39,40 +40,41 @@ Amplify.configure({
 
 const App = () => {
 
-  const [authState, setAuthState] = useState('signOut')
+  const [signedIn, setSignedIn] = useState(false)
   const [email, setEmail] = useState(null)
   const [jwtToken, setJwtToken] = useState(null)
   const [personalData, setPersonalData] = useState(null)
 
   useEffect(() => {
     (async () => {
-      const awsCred = await Auth.currentCredentials();
-      if (!awsCred.authenticated) {
+      // const awsCred = await Auth.currentCredentials();
+      const session = await Auth.currentSession();
+      if (session.isValid()) {
+        console.log('認証済');
+        const decodedIdToken = jwtDecode(session.idToken.jwtToken);
+        const user = await Auth.currentAuthenticatedUser()
+        setSignedIn(true);
+        setEmail(decodedIdToken.email);
+        setJwtToken(session.idToken.jwtToken);
+      } else {
         console.log('未認証');
-        setAuthState('signOut');
+        setSignedIn(false);
         setEmail(null);
         setJwtToken(null);
-        return;
       }
-      console.log('認証済');
-      const session = await Auth.currentSession();
-      const decodedIdToken = jwtDecode(session.idToken.jwtToken);
-      setAuthState('signedIn');
-      setEmail(decodedIdToken.email);
-      setJwtToken(session.idToken.jwtToken);
     })()
-  }, [setAuthState, setEmail, setJwtToken]);
+  }, [setSignedIn, setEmail, setJwtToken]);
 
   const signIn = async () => {
-    await Auth.federatedSignIn();
+    await Auth.federatedSignIn({ provider: 'google' });
     console.log('signIn');
-    setAuthState('signedIn');
+    setSignedIn(true);
   };
 
   const signOut = async () => {
     await Auth.signOut();
     console.log('signOut');
-    setAuthState('signOut');
+    setSignedIn(false);
     setEmail(null);
     setJwtToken(null);
   };
@@ -93,9 +95,8 @@ const App = () => {
   return (
     <div>
       <div className="signin">
-        {/* {authState === 'signOut' && <a className="App-link" href={HOSTED_UI_URL}>Sign-In with UserPool Hosted-UI</a>} */}
-        {authState === 'signOut' && <button onClick={signIn}>login</button>}
-        {authState === 'signedIn' && <AuthedContents email={email} signOut={signOut} execApi={execApi} />}
+        {!signedIn && <button onClick={signIn}>login</button>}
+        {signedIn && <AuthedContents email={email} signOut={signOut} execApi={execApi} />}
       </div>
       <p>{personalData}</p>
     </div>
